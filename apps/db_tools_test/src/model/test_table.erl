@@ -65,16 +65,16 @@ as_record([V1, V2, V3, V4, V5, V6, V7]) ->
 get_table_field_list() ->
     [field_1, field_2, field_3, field_4, field_5, field_6, field_7].
 
--spec get_table_key_filed_list() -> list().
-get_table_key_filed_list() ->
-    [field_1, field_2].
+-spec get_table_key_field_list() -> list().
+get_table_key_field_list() ->
+    [field_1].
 
 -spec get_table_key_values(test_table()|#test_table{}) -> list().
-get_table_key_values(#{field_1 := V1, field_2 := V2}) ->
-    [V1, V2];
+get_table_key_values(#{field_1 := V1}) ->
+    [V1];
 
-get_table_key_values(#test_table{field_1 = V1, field_2 = V2}) ->
-    [V1, V2].
+get_table_key_values(#test_table{field_1 = V1}) ->
+    [V1].
 
 -spec get_table_values(test_table()|#test_table{}) -> list().
 get_table_values(#{field_1 := V1, field_2 := V2, field_3 := V3,

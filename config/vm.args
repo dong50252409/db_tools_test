@@ -1,6 +1,3 @@
 -sname db_tools_test
-
--setcookie db_tools_test_cookie
-
 +K true
 +A30
