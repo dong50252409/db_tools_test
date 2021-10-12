@@ -13,34 +13,38 @@
 -export([start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
 
--export([test/1, change_something/0, drop_data/0, flush_state/0]).
+-export([test/0, test/1, change_something/0, drop_data/0, flush_state/0]).
 %%%===================================================================
 %%% Spawning and gen_server implementation
 %%%===================================================================
 
+test() ->
+    ModeList = [map, maps, record, record_list],
+    lists:foreach(fun(Mode) -> test(Mode) end, ModeList).
+
 test(Mod) ->
     {ok, Pid} = start_link(Mod),
-    flush_state(),
+    ok = flush_state(),
     timer:sleep(3000),
 
     create_something(),
-    flush_state(),
+    ok = flush_state(),
     timer:sleep(3000),
 
     change_something(),
-    flush_state(),
+    ok = flush_state(),
     timer:sleep(3000),
 
     drop_data(),
-    flush_state(),
+    ok = flush_state(),
     timer:sleep(3000),
 
     create_something(),
-    flush_state(),
+    ok = flush_state(),
     timer:sleep(3000),
 
     drop_data(),
-    flush_state(),
+    ok = flush_state(),
     timer:sleep(3000),
 
     gen_server:stop(Pid).

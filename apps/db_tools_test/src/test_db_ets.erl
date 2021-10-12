@@ -11,10 +11,11 @@
 -include("test_table.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
--export([start_link/1, do_delete_all_objects/1]).
+-export([start_link/0, do_delete_all_objects/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
 
--export([test_1/0, test_2/0, func/1, flush/0]).
+-export([test/0, test_1/0, test_2/0, func/1, flush/0]).
+
 -export([
     do_insert/1, do_insert_new/1, do_insert_update/1,
     do_update_counter/1, do_update_element/1, do_select_replace/1,
@@ -26,46 +27,52 @@
 %%% Spawning and gen_server implementation
 %%%===================================================================
 
+test() ->
+    test_1(),
+
+    test_2().
+
 test_1() ->
-    start_link([{mode, auto}, {flush_interval, 1 * 60 * 1000}]),
+    %% [{mode, auto}, {flush_interval, 1 * 60 * 1000}]
+    start_link(),
     func(do_insert),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_insert_new),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_insert_update),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_update_counter),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_update_element),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete_object),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_take),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_select_delete),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete_all_objects),
-    db_ets:flush(?ETS_TEST_TABLE),
+    ok = db_ets:flush(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete_table),
@@ -79,45 +86,46 @@ test_1() ->
 
 
 test_2() ->
-    start_link([{mode, {callback, ?MODULE}}, {flush_interval, 1 * 60 * 1000}]),
+    %% [{mode, {callback, ?MODULE}}, {flush_interval, 1 * 60 * 1000}]
+    start_link(),
     func(do_insert),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_insert_new),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_insert_update),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_update_counter),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_update_element),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete_object),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_take),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_select_delete),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete_all_objects),
-    db_ets:pull(?ETS_TEST_TABLE),
+    {_, _, _} = db_ets:pull(?ETS_TEST_TABLE),
     timer:sleep(3000),
 
     func(do_delete_table),
@@ -129,8 +137,8 @@ test_2() ->
 %%    db_ets:flush(?ETS_TEST_TABLE),
 %%    timer:sleep(3000).
 
-start_link(Options) ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, Options, []).
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 func(Fun) ->
     gen_server:call(?MODULE, {func, Fun}, infinity).
@@ -138,19 +146,18 @@ func(Fun) ->
 flush() ->
     gen_server:call(?MODULE, flush, infinity).
 
-init(Options) ->
-    Tab = ets:new(?ETS_TEST_TABLE, [named_table, set, {keypos, #test_table.field_1}]),
-    ok = db_ets:reg_select(?ETS_TEST_TABLE, test_db, ?TEST_TABLE, [], Options),
-    {ok, #{tab => Tab}}.
+init([]) ->
+    _Tab = ets:new(?ETS_TEST_TABLE, [named_table, set, {keypos, #test_table.field_1}]),
+    {ok, #{}}.
 
 handle_call({func, Fun}, _From, State) ->
     io:format("func:~w~n", [Fun]),
     State1 = ?MODULE:Fun(State),
     {reply, ok, State1};
 
-handle_call(flush, _From, #{tab := Tab} = State) ->
+handle_call(flush, _From, State) ->
     io:format("flush ~n", []),
-    db_ets:flush(Tab),
+    db_ets:flush(?ETS_TEST_TABLE),
     {reply, ok, State};
 
 handle_call(_Request, _From, State) ->
@@ -170,64 +177,60 @@ terminate(_Reason, _State) ->
 %%% Internal functions
 %%%===================================================================
 
-do_insert(#{tab := Tab} = State) ->
+do_insert(State) ->
     RecordList = [db_tools_test_util:new_record() || _ <- lists:seq(1, 10)],
-    ets:insert(Tab, RecordList),
+    ets:insert(?ETS_TEST_TABLE, RecordList),
     State#{keys => [Record#test_table.field_1 || Record <- RecordList]}.
 
-do_insert_new(#{tab := Tab, keys := Keys} = State) ->
+do_insert_new(#{keys := Keys} = State) ->
     Record = db_tools_test_util:new_record(),
-    ets:insert_new(Tab, Record),
+    ets:insert_new(?ETS_TEST_TABLE, Record),
     State#{keys := [Record#test_table.field_1 | Keys]}.
 
-do_insert_update(#{tab := Tab} = State) ->
-    RecordList = [db_tools_test_util:rand_change(Record) || Record <- ets:tab2list(Tab)],
-    ets:insert(Tab, RecordList),
+do_insert_update(State) ->
+    lists:foreach(
+        fun(Record) ->
+            NewRecord = db_tools_test_util:rand_change(Record),
+            ets:insert(?ETS_TEST_TABLE, NewRecord)
+        end,
+        ets:tab2list(?ETS_TEST_TABLE)),
     State.
 
-do_update_counter(#{tab := Tab, keys := Keys} = State) ->
-    [
-        begin
-            ets:update_counter(Tab, Key, {#test_table.field_2, 1})
-        end || Key <- Keys
-    ],
+do_update_counter(#{keys := Keys} = State) ->
+    [ets:update_counter(?ETS_TEST_TABLE, Key, {#test_table.field_2, 1}) || Key <- Keys],
     State.
 
-do_update_element(#{tab := Tab, keys := Keys} = State) ->
-    [
-        begin
-            ets:update_element(Tab, Key, {#test_table.field_2, 1})
-        end || Key <- Keys
-    ],
+do_update_element(#{keys := Keys} = State) ->
+    [ets:update_element(?ETS_TEST_TABLE, Key, {#test_table.field_2, 1}) || Key <- Keys],
     State.
 
-do_select_replace(#{tab := Tab} = State) ->
+do_select_replace(State) ->
     MS = ets:fun2ms(fun(Record) when Record#test_table.field_1 rem 3 =:= 0 -> Record#test_table{field_3 = <<>>} end),
-    ets:select_replace(Tab, MS),
+    ets:select_replace(?ETS_TEST_TABLE, MS),
     State.
 
-do_delete(#{tab := Tab, keys := [Key | T]} = State) ->
-    ets:delete(Tab, Key),
+do_delete(#{keys := [Key | T]} = State) ->
+    ets:delete(?ETS_TEST_TABLE, Key),
     State#{keys := T}.
 
-do_delete_object(#{tab := Tab, keys := [Key | T]} = State) ->
-    [Record] = ets:lookup(Tab, Key),
-    ets:delete_object(Tab, Record),
+do_delete_object(#{keys := [Key | T]} = State) ->
+    [Record] = ets:lookup(?ETS_TEST_TABLE, Key),
+    ets:delete_object(?ETS_TEST_TABLE, Record),
     State#{keys := T}.
 
-do_select_delete(#{tab := Tab, keys := Keys} = State) ->
+do_select_delete(#{keys := Keys} = State) ->
     MS = ets:fun2ms(fun(#test_table{field_1 = Field1}) when Field1 rem 2 =:= 0 -> true end),
-    ets:select_delete(Tab, MS),
+    ets:select_delete(?ETS_TEST_TABLE, MS),
     State#{keys := [Key || Key <- Keys, Key rem 2 =/= 0]}.
 
-do_take(#{tab := Tab, keys := [Key | T]} = State) ->
-    [_Record] = ets:take(Tab, Key),
+do_take(#{keys := [Key | T]} = State) ->
+    [_Record] = ets:take(?ETS_TEST_TABLE, Key),
     State#{keys := T}.
 
-do_delete_all_objects(#{tab := Tab} = State) ->
-    ets:delete_all_objects(Tab),
+do_delete_all_objects(State) ->
+    ets:delete_all_objects(?ETS_TEST_TABLE),
     State#{keys := []}.
 
-do_delete_table(#{tab := Tab} = State) ->
-    ets:delete(Tab),
-    State#{tab := Tab, keys := []}.
+do_delete_table(State) ->
+    ets:delete(?ETS_TEST_TABLE),
+    State#{keys := []}.

@@ -4,7 +4,7 @@
     {registered, []},
     {mod, {db_tools_test_app, []}},
     {applications, [
-        kernel, stdlib
+        kernel, stdlib, db
     ]},
     {env, []},
     {modules, []},
