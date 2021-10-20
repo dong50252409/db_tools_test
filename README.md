@@ -1,7 +1,7 @@
 db_tools_test
 =====
 
-测试 [db](https://github.com/dong50252409/db) [db_tools](https://github.com/dong50252409/db_tools)
+测试 [`db`](https://github.com/dong50252409/db) [`db_tools`](https://github.com/dong50252409/db_tools)
 
 1. 修改`config/sys.config`中的数据库信息
 2. 创建数据库，数据库格式 `apps/db_tools_test/priv/db.config`，或调用（windows）`scripts/update_db.bat`、（linux）`scripts/update_db.sh`，需要修改脚本中数据库相关信息
